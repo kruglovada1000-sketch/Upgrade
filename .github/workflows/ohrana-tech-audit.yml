@@ -1,0 +1,67 @@
+name: ohrana.tech weekly audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 5 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  static-audit:
+    name: Static SEO and links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Upgrade
+        uses: actions/checkout@v5
+        with:
+          path: upgrade
+
+      - name: Checkout ohrana.tech
+        uses: actions/checkout@v5
+        with:
+          repository: kruglovada1000-sketch/ohrana.tech
+          path: site
+
+      - name: Run custom static SEO audit
+        run: python3 upgrade/scripts/static_seo_audit.py site
+
+      - name: Check links with Lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          workingDirectory: site
+          args: >-
+            --no-progress
+            --root-dir "$(pwd)"
+            './**/*.html'
+            './**/*.md'
+          fail: false
+          jobSummary: true
+
+  lighthouse:
+    name: Lighthouse production snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.15.x
+
+      - name: Audit live home page
+        continue-on-error: true
+        run: |
+          lhci collect \
+            --url=https://ohrana.tech/ \
+            --numberOfRuns=1
+
+      - name: Save Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-ohrana-tech
+          path: .lighthouseci/
+          if-no-files-found: ignore
