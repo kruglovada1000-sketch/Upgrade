@@ -1,0 +1,38 @@
+ohrana.tech — файлы, которые нужно синхронизировать с хостингом после SEO-проверки 2026-09-25
+
+Сначала после слияния ветки upgrade/seo-cleanup-2026-09-25:
+.htaccess
+images/logo-animation.html
+
+Статьи уже есть в GitHub и sitemap.xml, но живой сайт на момент проверки отдаёт по ним HTTP 404. Их нужно загрузить в папку /stati на хостинге:
+
+stati/chto-delat-esli-ohrannik-ne-vyshel-na-smenu.html
+stati/dokumenty-choo-do-nachala-ohrany.html
+stati/dopusk-podryadchikov-kurerov-vremennyh-rabotnikov.html
+stati/imeet-li-ohrannik-pravo-osmatrivat-sumki-avtomobil.html
+stati/kak-bystro-dolzhna-priehat-gbr.html
+stati/kak-umenshit-lozhnye-trevogi.html
+stati/kak-usilit-ohranu-sklada-v-pikovyy-sezon.html
+stati/kak-zashchitit-dachu-zimoy.html
+stati/kogda-nuzhen-starshiy-smeny-ohrany.html
+stati/kontrol-vezda-vyezda-transporta.html
+stati/mozhet-li-chastnyy-ohrannik-zaderzhat-narushitelya.html
+stati/nuzhna-li-trevozhnaya-knopka-esli-est-kamery.html
+stati/ohrana-obekta-vo-vremya-remonta-pereezda.html
+stati/ohrana-pogruzki-i-razgruzki.html
+stati/ohrana-pri-otklyuchenii-elektrichestva-interneta-skud.html
+stati/otvetstvennost-choo-i-sluzhby-bezopasnosti-zakazchika.html
+stati/otvetstvennost-choo-za-propazhu-imushchestva.html
+stati/posetitel-otkazyvaetsya-soblyudat-propusknoy-rezhim.html
+stati/poteryan-propusk-klyuch-karta-dostupa.html
+stati/srok-zapuska-ohrany-novogo-obekta.html
+stati/usilenie-ohrany-nochyu-vyhodnye-prazdniki.html
+stati/zamena-ohrannika-po-trebovaniyu-zakazchika.html
+stati/zashchita-ohrannoy-signalizacii-ot-glusheniya.html
+stati/zhurnaly-i-dokumenty-na-postu-ohrany.html
+
+Также загрузить актуальный sitemap.xml, если версия на хостинге старее GitHub.
+
+Примечание: Formspree endpoint в автоматической проверке отвечает 405 на GET. Это не означает, что форма сломана; форму нужно проверять реальной отправкой POST.
+
+Остаётся отдельная SEO-задача: конфликт canonical у ohrana-restoranov/index.html и stati/ohrana-restoranov.html. Его не исправлять удалением вслепую — сначала определить, сохраняем ли обе страницы как разные поисковые посадочные или объединяем их.
