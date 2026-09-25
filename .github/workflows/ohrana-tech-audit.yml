@@ -68,4 +68,5 @@ jobs:
         with:
           name: lighthouse-ohrana-tech
           path: .lighthouseci/
+          include-hidden-files: true
           if-no-files-found: ignore
