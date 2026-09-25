@@ -77,9 +77,17 @@ class PageParser(HTMLParser):
             self._h1_parts.append(data)
 
 
+def is_service_verification_file(path: Path) -> bool:
+    """Ignore search-engine ownership verification HTML files."""
+    name = path.name.lower()
+    return name.startswith("google") or name.startswith("yandex_")
+
+
 def iter_html(root: Path):
     for path in root.rglob("*.html"):
         if any(part in SKIP_DIRS for part in path.parts):
+            continue
+        if is_service_verification_file(path):
             continue
         yield path
 
