@@ -1,0 +1,62 @@
+name: Build FileZilla package
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build-filezilla-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ohrana.tech main
+        uses: actions/checkout@v5
+        with:
+          repository: kruglovada1000-sketch/ohrana.tech
+          ref: main
+          path: site
+
+      - name: Build exact hosting upload ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd site
+          zip -r ../ohrana-tech-filezilla-2026-09-25.zip \
+            .htaccess \
+            sitemap.xml \
+            images/logo-animation.html \
+            stati/chto-delat-esli-ohrannik-ne-vyshel-na-smenu.html \
+            stati/dokumenty-choo-do-nachala-ohrany.html \
+            stati/dopusk-podryadchikov-kurerov-vremennyh-rabotnikov.html \
+            stati/imeet-li-ohrannik-pravo-osmatrivat-sumki-avtomobil.html \
+            stati/kak-bystro-dolzhna-priehat-gbr.html \
+            stati/kak-umenshit-lozhnye-trevogi.html \
+            stati/kak-usilit-ohranu-sklada-v-pikovyy-sezon.html \
+            stati/kak-zashchitit-dachu-zimoy.html \
+            stati/kogda-nuzhen-starshiy-smeny-ohrany.html \
+            stati/kontrol-vezda-vyezda-transporta.html \
+            stati/mozhet-li-chastnyy-ohrannik-zaderzhat-narushitelya.html \
+            stati/nuzhna-li-trevozhnaya-knopka-esli-est-kamery.html \
+            stati/ohrana-obekta-vo-vremya-remonta-pereezda.html \
+            stati/ohrana-pogruzki-i-razgruzki.html \
+            stati/ohrana-pri-otklyuchenii-elektrichestva-interneta-skud.html \
+            stati/otvetstvennost-choo-i-sluzhby-bezopasnosti-zakazchika.html \
+            stati/otvetstvennost-choo-za-propazhu-imushchestva.html \
+            stati/posetitel-otkazyvaetsya-soblyudat-propusknoy-rezhim.html \
+            stati/poteryan-propusk-klyuch-karta-dostupa.html \
+            stati/srok-zapuska-ohrany-novogo-obekta.html \
+            stati/usilenie-ohrany-nochyu-vyhodnye-prazdniki.html \
+            stati/zamena-ohrannika-po-trebovaniyu-zakazchika.html \
+            stati/zashchita-ohrannoy-signalizacii-ot-glusheniya.html \
+            stati/zhurnaly-i-dokumenty-na-postu-ohrany.html
+
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohrana-tech-filezilla-2026-09-25
+          path: ohrana-tech-filezilla-2026-09-25.zip
+          if-no-files-found: error
