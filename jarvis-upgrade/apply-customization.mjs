@@ -19,6 +19,17 @@ function escapeTemplateLiteral(value) {
     .replaceAll('${', '\\${')
 }
 
+function findClosingBacktick(text, from) {
+  for (let i = from; i < text.length; i += 1) {
+    if (text[i] !== '`') continue
+
+    let slashes = 0
+    for (let j = i - 1; j >= 0 && text[j] === '\\'; j -= 1) slashes += 1
+    if (slashes % 2 === 0) return i
+  }
+  return -1
+}
+
 function appendContextToPrompt(relativePath, exportPrefix = 'const SYSTEM_PROMPT = `') {
   const path = join(target, relativePath)
   let text = readFileSync(path, 'utf8')
@@ -26,7 +37,7 @@ function appendContextToPrompt(relativePath, exportPrefix = 'const SYSTEM_PROMPT
   if (start < 0) throw new Error(`SYSTEM_PROMPT start not found in ${relativePath}`)
 
   const bodyStart = start + exportPrefix.length
-  const end = text.indexOf('`\n\n/**', bodyStart)
+  const end = findClosingBacktick(text, bodyStart)
   if (end < 0) throw new Error(`SYSTEM_PROMPT end not found in ${relativePath}`)
 
   const injected = `\n\nPROJECT OVERRIDE — RUSCORP / KODA. The instructions below override earlier persona/style instructions where they conflict.\n\n${escapeTemplateLiteral(context)}\n`
