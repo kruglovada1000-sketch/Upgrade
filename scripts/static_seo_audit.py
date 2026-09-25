@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Lightweight static-site SEO and link audit.
+"""Lightweight static-site SEO and link audit for ohrana.tech-style sites.
 
-No third-party dependencies. Designed for HTML/CSS/JS repositories such as
-ohrana.tech. By default it reports findings but exits successfully; add
---strict to return exit code 1 when errors are found.
+No third-party dependencies. The scanner understands common Apache 301
+redirects, noindex pages and HTML meta-refresh aliases so technical transition
+pages are not reported as normal indexable landing pages.
 """
 
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -27,6 +28,8 @@ class Page:
     title: str = ""
     h1: list[str] = field(default_factory=list)
     canonical: str = ""
+    robots: str = ""
+    meta_refresh: str = ""
     links: list[str] = field(default_factory=list)
     images_without_alt: int = 0
 
@@ -58,6 +61,13 @@ class PageParser(HTMLParser):
             rel = {x.strip().lower() for x in data.get("rel", "").split()}
             if "canonical" in rel and data.get("href"):
                 self.page.canonical = data["href"].strip()
+        elif tag == "meta":
+            name = data.get("name", "").strip().lower()
+            http_equiv = data.get("http-equiv", "").strip().lower()
+            if name == "robots":
+                self.page.robots = data.get("content", "").strip()
+            if http_equiv == "refresh":
+                self.page.meta_refresh = data.get("content", "").strip()
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
@@ -100,6 +110,51 @@ def parse_page(path: Path) -> Page:
     except Exception as exc:
         print(f"ERROR parse {path}: {exc}")
     return parser.page
+
+
+def file_url(root: Path, path: Path) -> str:
+    """Map a repository HTML path to its normal public URL path."""
+    rel = path.relative_to(root).as_posix()
+    if rel == "index.html":
+        return "/"
+    if rel.endswith("/index.html"):
+        return "/" + rel[: -len("index.html")]
+    return "/" + rel
+
+
+def apache_redirect_sources(root: Path) -> set[str]:
+    """Read simple Redirect 301/permanent sources from .htaccess."""
+    htaccess = root / ".htaccess"
+    if not htaccess.exists():
+        return set()
+    text = htaccess.read_text(encoding="utf-8", errors="replace")
+    pattern = re.compile(r"^\s*Redirect\s+(?:301|permanent)\s+(\S+)", re.I | re.M)
+    return {match.group(1) for match in pattern.finditer(text)}
+
+
+def homepage_has_http_canonical(root: Path) -> bool:
+    """Recognize the project's Apache Link rel=canonical header for '/'."""
+    htaccess = root / ".htaccess"
+    if not htaccess.exists():
+        return False
+    text = htaccess.read_text(encoding="utf-8", errors="replace")
+    lowered = text.lower()
+    return (
+        "header set link" in lowered
+        and "rel=\\\"canonical\\\"" in lowered
+        and "https://ohrana.tech/" in lowered
+        and "request_uri" in lowered
+        and "^/$" in text
+    )
+
+
+def is_nonindex_page(root: Path, page: Page, redirect_sources: set[str]) -> bool:
+    robots = page.robots.lower()
+    return (
+        "noindex" in robots
+        or bool(page.meta_refresh)
+        or file_url(root, page.path) in redirect_sources
+    )
 
 
 def local_target_exists(root: Path, source: Path, href: str) -> bool:
@@ -145,8 +200,14 @@ def sitemap_findings(root: Path) -> list[str]:
             locs.append(element.text.strip())
 
     findings: list[str] = []
-    duplicates = sorted({url for url in locs if locs.count(url) > 1})
-    for url in duplicates:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for url in locs:
+        if url in seen:
+            duplicates.add(url)
+        seen.add(url)
+
+    for url in sorted(duplicates):
         findings.append(f"ERROR duplicate sitemap URL: {url}")
     if not locs:
         findings.append("WARN sitemap.xml contains no <loc> URLs")
@@ -160,9 +221,21 @@ def audit(root: Path) -> tuple[int, int, list[str]]:
 
     titles: dict[str, list[Path]] = defaultdict(list)
     canonicals: dict[str, list[Path]] = defaultdict(list)
+    redirects = apache_redirect_sources(root)
+    home_http_canonical = homepage_has_http_canonical(root)
 
     for page in pages:
         rel = page.path.relative_to(root)
+        nonindex = is_nonindex_page(root, page, redirects)
+
+        # Link integrity still matters even for redirect/noindex helper pages.
+        for href in page.links:
+            if not local_target_exists(root, page.path, href):
+                findings.append(f"ERROR {rel}: broken local link -> {href}")
+                errors += 1
+
+        if nonindex:
+            continue
 
         if not page.title:
             findings.append(f"ERROR {rel}: missing <title>")
@@ -173,20 +246,19 @@ def audit(root: Path) -> tuple[int, int, list[str]]:
         if len(page.h1) != 1:
             findings.append(f"WARN  {rel}: expected 1 H1, found {len(page.h1)}")
 
-        if not page.canonical:
+        canonical = page.canonical
+        if rel.as_posix() == "index.html" and not canonical and home_http_canonical:
+            canonical = "https://ohrana.tech/"
+
+        if not canonical:
             findings.append(f"WARN  {rel}: missing canonical")
         else:
-            canonicals[page.canonical].append(rel)
+            canonicals[canonical].append(rel)
 
         if page.images_without_alt:
             findings.append(
                 f"WARN  {rel}: {page.images_without_alt} image(s) without alt attribute"
             )
-
-        for href in page.links:
-            if not local_target_exists(root, page.path, href):
-                findings.append(f"ERROR {rel}: broken local link -> {href}")
-                errors += 1
 
     for title, paths in sorted(titles.items()):
         if len(paths) > 1:
@@ -197,7 +269,7 @@ def audit(root: Path) -> tuple[int, int, list[str]]:
     for canonical, paths in sorted(canonicals.items()):
         if len(paths) > 1:
             joined = ", ".join(str(p) for p in paths)
-            findings.append(f"WARN  canonical used by multiple files: {canonical} -> {joined}")
+            findings.append(f"WARN  canonical used by multiple indexable files: {canonical} -> {joined}")
 
     for item in sitemap_findings(root):
         findings.append(item)
