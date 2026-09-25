@@ -1,7 +1,8 @@
 ohrana.tech — файлы, которые нужно синхронизировать с хостингом после SEO-проверки 2026-09-25
 
-Сначала после слияния ветки upgrade/seo-cleanup-2026-09-25:
+SEO-правки уже слиты в main. На хостинг обязательно загрузить актуальные версии из main:
 .htaccess
+sitemap.xml
 images/logo-animation.html
 
 Статьи уже есть в GitHub и sitemap.xml, но живой сайт на момент проверки отдаёт по ним HTTP 404. Их нужно загрузить в папку /stati на хостинге:
@@ -31,8 +32,15 @@ stati/zamena-ohrannika-po-trebovaniyu-zakazchika.html
 stati/zashchita-ohrannoy-signalizacii-ot-glusheniya.html
 stati/zhurnaly-i-dokumenty-na-postu-ohrany.html
 
-Также загрузить актуальный sitemap.xml, если версия на хостинге старее GitHub.
+SEO-дубли, исправленные в main через 301:
+/stati/nochnaya-ohrana.html -> /stati/nochnaya-ohrana-obektov.html
+/stati/ohrana-meropriyatiy-v-moskve.html -> /ohrana-meropriyatiy-v-moskve/
+/soprovozhdenie-gruzov/ -> /stati/soprovozhdenie-gruzov.html
+/stati/ohrana-restoranov.html -> /ohrana-restoranov/
+/stati/ohrana-restoranov/ -> /ohrana-restoranov/
+
+Страница images/logo-animation.html помечена noindex,follow как техническая, а не поисковая посадочная.
+
+Проверка Upgrade перед слиянием ресторанного исправления: 154 HTML-страницы, 0 статических SEO-ошибок, 0 предупреждений/находок.
 
 Примечание: Formspree endpoint в автоматической проверке отвечает 405 на GET. Это не означает, что форма сломана; форму нужно проверять реальной отправкой POST.
-
-Остаётся отдельная SEO-задача: конфликт canonical у ohrana-restoranov/index.html и stati/ohrana-restoranov.html. Его не исправлять удалением вслепую — сначала определить, сохраняем ли обе страницы как разные поисковые посадочные или объединяем их.
