@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "15 5 * * 1"
+  push:
+    paths:
+      - "scripts/**"
+      - ".github/workflows/ohrana-tech-audit.yml"
 
 permissions:
   contents: read
