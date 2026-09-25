@@ -26,6 +26,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: kruglovada1000-sketch/ohrana.tech
+          ref: upgrade/restaurant-canonical-2026-09-25
           path: site
 
       - name: Run custom static SEO audit
