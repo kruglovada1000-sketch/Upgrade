@@ -1,0 +1,34 @@
+name: Lighthouse production monitor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "40 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.15.x
+
+      - name: Audit ohrana.tech
+        run: |
+          lhci collect \
+            --url=https://ohrana.tech/ \
+            --numberOfRuns=1
+
+      - name: Save Lighthouse reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: .lighthouseci/
+          if-no-files-found: error
