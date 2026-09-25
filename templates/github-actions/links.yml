@@ -1,0 +1,33 @@
+name: Broken links monitor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 4 * * 1"
+  push:
+    paths:
+      - "**/*.html"
+      - "**/*.md"
+      - "sitemap.xml"
+      - "robots.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout site
+        uses: actions/checkout@v5
+
+      - name: Check links with Lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --root-dir "$(pwd)"
+            './**/*.html'
+            './**/*.md'
+          fail: false
+          jobSummary: true
