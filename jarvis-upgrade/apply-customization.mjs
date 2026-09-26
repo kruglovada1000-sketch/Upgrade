@@ -68,12 +68,24 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
 }
 
 // Give the local package a distinct identity while preserving the upstream licence.
+// FreeLLMAPI is optional: these commands only run when explicitly selected.
 {
   const path = join(target, 'package.json')
   const pkg = JSON.parse(readFileSync(path, 'utf8'))
   pkg.name = 'jarvis-koda'
   pkg.description = 'JARVIS customised for ohrana.tech, Upgrade and the Ruskorporatsiya workflow.'
+  pkg.scripts ??= {}
+  pkg.scripts['bridge:freellmapi'] = 'node scripts/freellmapi-bridge.mjs'
+  pkg.scripts['freellmapi:doctor'] = 'node scripts/freellmapi-doctor.mjs'
   writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n')
+}
+
+// Add our FreeLLMAPI adapter without modifying upstream bridge code.
+{
+  const moduleDir = join(here, 'freellmapi')
+  copyFileSync(join(moduleDir, 'freellmapi-bridge.mjs'), join(target, 'scripts', 'freellmapi-bridge.mjs'))
+  copyFileSync(join(moduleDir, 'freellmapi-doctor.mjs'), join(target, 'scripts', 'freellmapi-doctor.mjs'))
+  copyFileSync(join(moduleDir, 'README.md'), join(target, 'FREELLMAPI-KODA.md'))
 }
 
 // Ship the context and install guide inside every generated package.
