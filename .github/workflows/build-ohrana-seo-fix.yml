@@ -1,0 +1,41 @@
+name: Build ohrana.tech SEO fix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "seo-packages/ohrana-2026-09-27/**"
+      - ".github/workflows/build-ohrana-seo-fix.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Upgrade
+        uses: actions/checkout@v5
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Clone ohrana.tech
+        run: git clone --depth 1 https://github.com/kruglovada1000-sketch/ohrana.tech.git site
+
+      - name: Build SEO upload package
+        run: node seo-packages/ohrana-2026-09-27/patch.mjs site seo-upload
+
+      - name: Show upload list
+        run: cat seo-upload/UPLOAD-LIST.txt
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohrana-tech-seo-fix-2026-09-27
+          path: seo-upload/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
