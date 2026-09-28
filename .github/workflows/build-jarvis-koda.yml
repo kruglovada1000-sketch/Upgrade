@@ -34,6 +34,13 @@ jobs:
         working-directory: jarvis-koda
         run: npm ci
 
+      - name: Validate JARVIS Trader safety and market feed
+        working-directory: jarvis-koda
+        run: |
+          npm run trader:doctor
+          npm run trader:snapshot
+          npm run trader:paper -- --symbol BTC --side long --stopPct 1 --takePct 2
+
       - name: Validate build
         working-directory: jarvis-koda
         run: npm run build
