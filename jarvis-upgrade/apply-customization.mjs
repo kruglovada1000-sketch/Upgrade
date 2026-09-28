@@ -22,7 +22,6 @@ function escapeTemplateLiteral(value) {
 function findClosingBacktick(text, from) {
   for (let i = from; i < text.length; i += 1) {
     if (text[i] !== '`') continue
-
     let slashes = 0
     for (let j = i - 1; j >= 0 && text[j] === '\\'; j -= 1) slashes += 1
     if (slashes % 2 === 0) return i
@@ -35,11 +34,9 @@ function appendContextToPrompt(relativePath, exportPrefix = 'const SYSTEM_PROMPT
   let text = readFileSync(path, 'utf8')
   const start = text.indexOf(exportPrefix)
   if (start < 0) throw new Error(`SYSTEM_PROMPT start not found in ${relativePath}`)
-
   const bodyStart = start + exportPrefix.length
   const end = findClosingBacktick(text, bodyStart)
   if (end < 0) throw new Error(`SYSTEM_PROMPT end not found in ${relativePath}`)
-
   const injected = `\n\nPROJECT OVERRIDE — RUSCORP / KODA. The instructions below override earlier persona/style instructions where they conflict.\n\n${escapeTemplateLiteral(context)}\n`
   text = text.slice(0, end) + injected + text.slice(end)
   writeFileSync(path, text)
@@ -59,7 +56,7 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
 {
   const path = join(target, 'src/ui/Boot.tsx')
   let text = readFileSync(path, 'utf8')
-  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT TESTNET CONNECTOR ........ READY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
+  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT DEMO CONNECTOR ........... READY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
   const next = text.replace(/const LOG = \[[\s\S]*?\n\]/, replacement)
   if (next === text) throw new Error('Boot LOG block not found')
   writeFileSync(path, next)
@@ -76,12 +73,12 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   pkg.scripts['trader:doctor'] = 'node trader/trader-doctor.mjs'
   pkg.scripts['trader:snapshot'] = 'node trader/trader-snapshot.mjs'
   pkg.scripts['trader:paper'] = 'node trader/trader-paper.mjs'
-  pkg.scripts['trader:bybit:doctor'] = 'node trader/bybit-testnet-doctor.mjs'
-  pkg.scripts['trader:bybit:snapshot'] = 'node trader/bybit-testnet-snapshot.mjs'
-  pkg.scripts['trader:bybit:balance'] = 'node trader/bybit-testnet-balance.mjs'
-  pkg.scripts['trader:bybit:preview'] = 'node trader/bybit-testnet-preview.mjs'
-  pkg.scripts['trader:bybit:test'] = 'node trader/bybit-testnet-order.mjs'
-  pkg.scripts['trader:bybit:close'] = 'node trader/bybit-testnet-close.mjs'
+  pkg.scripts['trader:bybit:doctor'] = 'node trader/bybit-demo-doctor.mjs'
+  pkg.scripts['trader:bybit:snapshot'] = 'node trader/bybit-demo-snapshot.mjs'
+  pkg.scripts['trader:bybit:balance'] = 'node trader/bybit-demo-balance.mjs'
+  pkg.scripts['trader:bybit:preview'] = 'node trader/bybit-demo-preview.mjs'
+  pkg.scripts['trader:bybit:demo'] = 'node trader/bybit-demo-order.mjs'
+  pkg.scripts['trader:bybit:close'] = 'node trader/bybit-demo-close.mjs'
   writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n')
 }
 
@@ -103,13 +100,13 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
     'trader-doctor.mjs',
     'trader-snapshot.mjs',
     'trader-paper.mjs',
-    'bybit-testnet-lib.mjs',
-    'bybit-testnet-doctor.mjs',
-    'bybit-testnet-snapshot.mjs',
-    'bybit-testnet-balance.mjs',
-    'bybit-testnet-preview.mjs',
-    'bybit-testnet-order.mjs',
-    'bybit-testnet-close.mjs',
+    'bybit-demo-lib.mjs',
+    'bybit-demo-doctor.mjs',
+    'bybit-demo-snapshot.mjs',
+    'bybit-demo-balance.mjs',
+    'bybit-demo-preview.mjs',
+    'bybit-demo-order.mjs',
+    'bybit-demo-close.mjs',
   ]) {
     copyFileSync(join(moduleDir, file), join(targetDir, file))
   }
