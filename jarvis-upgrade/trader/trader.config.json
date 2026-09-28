@@ -36,5 +36,14 @@
     "minStopPct": 0.6,
     "maxStopPct": 2.2,
     "noAveragingDown": true
+  },
+  "strategyLab": {
+    "days": 30,
+    "warmupDays": 40,
+    "feeBpsPerSide": 6,
+    "slippageBpsPerSide": 2,
+    "researchRiskPct": 0.25,
+    "startingEquity": 10000,
+    "monteCarloRuns": 500
   }
 }
