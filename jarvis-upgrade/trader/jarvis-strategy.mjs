@@ -112,7 +112,26 @@ function slopePct(series, lookback = 5) {
   return ((now - prev) / prev) * 100
 }
 
-function candlesFromBybit(list) {
+export function intervalToMs(interval) {
+  const value = String(interval)
+  const map = {
+    '1': 60_000,
+    '3': 3 * 60_000,
+    '5': 5 * 60_000,
+    '15': 15 * 60_000,
+    '30': 30 * 60_000,
+    '60': 60 * 60_000,
+    '120': 2 * 60 * 60_000,
+    '240': 4 * 60 * 60_000,
+    '360': 6 * 60 * 60_000,
+    '720': 12 * 60 * 60_000,
+    D: 24 * 60 * 60_000,
+  }
+  if (!map[value]) throw new Error(`Unsupported interval: ${interval}`)
+  return map[value]
+}
+
+export function candlesFromBybit(list) {
   return [...list]
     .map((r) => ({
       ts: Number(r[0]),
@@ -122,23 +141,31 @@ function candlesFromBybit(list) {
       close: num(r[4]),
       volume: num(r[5]),
     }))
+    .filter((c) => [c.ts, c.open, c.high, c.low, c.close, c.volume].every(Number.isFinite))
     .sort((a, b) => a.ts - b.ts)
 }
 
-async function fetchKlines(symbol, interval, limit, config) {
+export function closedCandlesOnly(candles, interval, now = Date.now()) {
+  const ms = intervalToMs(interval)
+  return candles.filter((c) => c.ts + ms <= now)
+}
+
+export async function fetchStrategyKlines(symbol, interval, limit, config = loadConfig(), end = undefined) {
   const fullSymbol = normalizeBybitSymbol(symbol, config)
-  const data = await bybitPublicGet('/v5/market/kline', {
+  const params = {
     category: config.bybitDemo.category,
     symbol: fullSymbol,
     interval,
     limit,
-  }, config)
+  }
+  if (end !== undefined) params.end = end
+  const data = await bybitPublicGet('/v5/market/kline', params, config)
   const rows = data.result?.list
-  if (!Array.isArray(rows) || rows.length < 80) throw new Error(`Not enough ${interval} kline data for ${fullSymbol}`)
+  if (!Array.isArray(rows)) throw new Error(`No ${interval} kline data for ${fullSymbol}`)
   return candlesFromBybit(rows)
 }
 
-function timeframeStats(candles) {
+export function timeframeStats(candles) {
   const closes = candles.map((c) => c.close)
   const ema20s = emaSeries(closes, 20)
   const ema50s = emaSeries(closes, 50)
@@ -171,14 +198,12 @@ function clamp(n, lo, hi) {
   return Math.min(hi, Math.max(lo, n))
 }
 
-export async function evaluateJarvisStrategy(symbol = 'BTC', config = loadConfig()) {
-  const sCfg = config.strategy || {}
-  const [c4h, c1h, c15m] = await Promise.all([
-    fetchKlines(symbol, '240', 260, config),
-    fetchKlines(symbol, '60', 260, config),
-    fetchKlines(symbol, '15', 260, config),
-  ])
+export function evaluateJarvisStrategySnapshot({ symbol = 'BTC', c4h, c1h, c15m, config = loadConfig() }) {
+  if (c4h.length < 220 || c1h.length < 220 || c15m.length < 220) {
+    throw new Error('JARVIS strategy requires at least 220 closed candles on 4H, 1H and 15m')
+  }
 
+  const sCfg = config.strategy || {}
   const t4 = timeframeStats(c4h)
   const t1 = timeframeStats(c1h)
   const t15 = timeframeStats(c15m)
@@ -260,7 +285,21 @@ export async function evaluateJarvisStrategy(symbol = 'BTC', config = loadConfig
       maxOpenPositions: config.risk.maxOpenPositions,
       leverage: config.risk.maxLeverage,
       execution: 'SIGNAL_ONLY',
+      closedCandlesOnly: true,
     },
     generatedAt: new Date().toISOString(),
   }
+}
+
+export async function evaluateJarvisStrategy(symbol = 'BTC', config = loadConfig()) {
+  const now = Date.now()
+  const [raw4h, raw1h, raw15m] = await Promise.all([
+    fetchStrategyKlines(symbol, '240', 300, config),
+    fetchStrategyKlines(symbol, '60', 300, config),
+    fetchStrategyKlines(symbol, '15', 300, config),
+  ])
+  const c4h = closedCandlesOnly(raw4h, '240', now).slice(-260)
+  const c1h = closedCandlesOnly(raw1h, '60', now).slice(-260)
+  const c15m = closedCandlesOnly(raw15m, '15', now).slice(-260)
+  return evaluateJarvisStrategySnapshot({ symbol, c4h, c1h, c15m, config })
 }
