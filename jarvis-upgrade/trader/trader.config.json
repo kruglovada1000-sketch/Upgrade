@@ -18,11 +18,23 @@
   },
   "risk": {
     "maxRiskPerTradePct": 0.5,
-    "maxPositionPct": 10,
+    "maxPositionPct": 0.1,
     "maxDailyLossPct": 2,
     "maxOpenPositions": 1,
     "maxLeverage": 1,
     "requireStopLoss": true,
     "requireTakeProfit": true
+  },
+  "strategy": {
+    "name": "JARVIS_ORIGINAL_MTF_V1",
+    "scoreThreshold": 72,
+    "adxMin": 18,
+    "minAtrPct": 0.25,
+    "maxAtrPct": 4.0,
+    "stopAtrMult": 1.6,
+    "rewardRisk": 2.2,
+    "minStopPct": 0.6,
+    "maxStopPct": 2.2,
+    "noAveragingDown": true
   }
 }
