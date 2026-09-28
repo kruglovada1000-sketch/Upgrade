@@ -62,7 +62,8 @@ export async function bybitSignedRequest(method, path, { query = {}, body = null
   const cfg = bybitConfig(config)
   const { apiKey, apiSecret } = bybitCredentialsFromEnv()
   const recvWindow = Number(cfg.recvWindow || 5000)
-  const timestamp = Date.now().toString()
+  const timeData = await bybitPublicGet('/v5/market/time', {}, config)
+  const timestamp = String(timeData.time)
   const upperMethod = String(method).toUpperCase()
   const qs = queryString(query)
   const bodyString = body ? JSON.stringify(body) : ''
