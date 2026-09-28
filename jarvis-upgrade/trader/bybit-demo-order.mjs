@@ -2,7 +2,7 @@ import { appendFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadConfig, parseCliArgs } from './trader-lib.mjs'
-import { buildBybitDemoPlan, getBybitWallet, submitBybitDemoOrder } from './bybit-demo-lib.mjs'
+import { buildBybitDemoPlan, bybitSignedRequest, getBybitWallet, submitBybitDemoOrder } from './bybit-demo-lib.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const config = loadConfig()
@@ -22,6 +22,27 @@ const plan = await buildBybitDemoPlan({
 
 console.log('JARVIS Trader — Bybit DEMO order candidate')
 console.log(JSON.stringify(plan, null, 2))
+
+const leverage = String(config.risk?.maxLeverage || 1)
+try {
+  await bybitSignedRequest('POST', '/v5/position/set-leverage', {
+    body: {
+      category: plan.category,
+      symbol: plan.symbol,
+      buyLeverage: leverage,
+      sellLeverage: leverage,
+    },
+    config,
+  })
+  console.log(`Bybit DEMO leverage set to ${leverage}x`)
+} catch (error) {
+  const message = String(error?.message || error)
+  if (/110043|leverage not modified/i.test(message)) {
+    console.log(`Bybit DEMO leverage already ${leverage}x`)
+  } else {
+    throw error
+  }
+}
 
 const result = await submitBybitDemoOrder(plan, { confirmation: args.confirm, config })
 const event = {
