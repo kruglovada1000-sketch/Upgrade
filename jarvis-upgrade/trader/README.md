@@ -1,22 +1,23 @@
 # JARVIS Trader
 
-Безопасный первый этап торгового модуля для JARVIS // KODA.
+Торговый модуль для JARVIS // KODA.
 
-## Статус
+## Статус v0.2
 
-По умолчанию модуль работает только в `paper`-режиме:
+По умолчанию JARVIS Trader остаётся в безопасном `paper`-режиме.
 
-- использует публичные рыночные данные Hyperliquid;
-- не требует приватного ключа;
-- не может отправлять реальные ордера;
-- проверяет лимиты риска до любой симуляции;
-- сохраняет основу для последующего подключения Hyperliquid testnet / Jinn.
+Дополнительно добавлен **Bybit Testnet**:
 
-## Почему начинаем так
+- публичные котировки Bybit Testnet;
+- проверка API-ключа и его разрешений;
+- чтение тестового баланса;
+- расчёт сделки через общий Risk Guard;
+- тестовый market-order с обязательными TP/SL;
+- аварийное закрытие тестовой позиции;
+- журнал отправленных testnet-команд;
+- mainnet endpoint в конфигурации отсутствует.
 
-Jinn Network использует похожую модель: отдельный API-wallet для торговли, testnet перед mainnet и жёсткие risk rails. Для первого запуска JARVIS Trader мы ещё строже: реальное исполнение отсутствует физически.
-
-## Команды в собранном JARVIS
+## Базовые команды
 
 ```bash
 npm run trader:doctor
@@ -24,14 +25,82 @@ npm run trader:snapshot
 npm run trader:paper -- --symbol BTC --side long --stopPct 1 --takePct 2
 ```
 
-`trader:snapshot` читает публичные mid-price BTC/ETH/SOL.
+## Bybit Testnet
 
-`trader:paper` создаёт только расчёт виртуальной сделки и проверяет её через risk guard. Никакие ордера на биржу не отправляются.
+Публичная проверка, ключи не нужны:
 
-## Ограничения v0.1
+```bash
+npm run trader:bybit:doctor
+npm run trader:bybit:snapshot
+```
 
-- mode: `paper`;
-- starting equity: 10 000 условных USDC;
+Для приватных команд нужны **только Testnet API key/secret**, созданные на Bybit Testnet.
+Никогда не добавляйте ключи в GitHub и не записывайте их в этот репозиторий.
+
+Переменные окружения:
+
+```text
+BYBIT_TESTNET_API_KEY
+BYBIT_TESTNET_API_SECRET
+```
+
+Для ключа рекомендуется оставить только разрешения ContractTrade: `Order` и `Position`.
+JARVIS Trader намеренно отклоняет ключ, если у него есть любые Wallet permissions.
+
+После установки переменных:
+
+```bash
+npm run trader:bybit:doctor
+npm run trader:bybit:balance
+npm run trader:bybit:preview -- --symbol BTC --side long --stopPct 1 --takePct 2
+```
+
+`preview` рассчитывает сделку, но ничего не отправляет.
+
+### Отправка тестового ордера
+
+Bybit Testnet order имеет двойной предохранитель.
+
+Нужно одновременно:
+
+```text
+JARVIS_TRADER_TESTNET_EXECUTION=YES
+```
+
+и флаг:
+
+```text
+--confirm TESTNET
+```
+
+Пример:
+
+```bash
+npm run trader:bybit:test -- --symbol BTC --side long --stopPct 1 --takePct 2 --confirm TESTNET
+```
+
+В сделке используются:
+
+- Bybit category `linear`;
+- market order;
+- leverage 1x;
+- обязательные Stop Loss и Take Profit;
+- размер позиции, ограниченный Risk Guard;
+- позиционный режим `one-way` (`positionIdx=0`).
+
+### Аварийное закрытие
+
+```bash
+npm run trader:bybit:close -- --symbol BTC --confirm TESTNET
+```
+
+Команда тоже требует `JARVIS_TRADER_TESTNET_EXECUTION=YES` и закрывает только тестовую позицию reduce-only ордером.
+
+## Ограничения риска
+
+По умолчанию:
+
+- paper starting equity: 10 000 условных USDC;
 - риск на одну сделку: не более 0.5% капитала;
 - размер позиции: не более 10% капитала;
 - не более 1 открытой позиции одновременно;
@@ -39,12 +108,14 @@ npm run trader:paper -- --symbol BTC --side long --stopPct 1 --takePct 2
 - leverage: 1x;
 - SL и TP обязательны.
 
-Все параметры находятся в `trader.config.json`.
+Параметры находятся в `trader.config.json`.
 
-## Дальше
+## Что пока НЕ сделано
 
-Этап 2 — отдельный Hyperliquid testnet API-wallet без права вывода средств.
+- нет Bybit mainnet execution;
+- нет автоматического перехода с testnet на live;
+- нет автоторговой стратегии/сигнального цикла;
+- нет хранения приватных ключей в GitHub;
+- нет разрешений на вывод средств.
 
-Этап 3 — цикл JARVIS: market data -> идея -> risk guard -> testnet order -> журнал сделки -> разбор результата.
-
-Этап 4 — live режим рассматривается только после статистики testnet/paper и отдельного ручного включения. Приватные ключи никогда не коммитятся в GitHub.
+Следующий этап после успешной проверки Bybit Testnet: market data -> стратегия JARVIS -> Risk Guard -> testnet order -> контроль позиции -> журнал -> статистика P&L/просадки/win rate/profit factor.
