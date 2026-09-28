@@ -6,7 +6,6 @@ import {
   evaluateJarvisStrategySnapshot,
   fetchStrategyKlines,
   intervalToMs,
-  normalizeBybitSymbol as _unused,
 } from './jarvis-strategy.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
