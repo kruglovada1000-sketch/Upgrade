@@ -5,8 +5,8 @@
     "endpoint": "https://api.hyperliquid.xyz/info",
     "symbols": ["BTC", "ETH", "SOL"]
   },
-  "bybitTestnet": {
-    "baseUrl": "https://api-testnet.bybit.com",
+  "bybitDemo": {
+    "baseUrl": "https://api-demo.bybit.com",
     "category": "linear",
     "quote": "USDT",
     "accountType": "UNIFIED",
