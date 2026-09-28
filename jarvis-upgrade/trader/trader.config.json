@@ -1,0 +1,20 @@
+{
+  "mode": "paper",
+  "marketData": {
+    "provider": "hyperliquid",
+    "endpoint": "https://api.hyperliquid.xyz/info",
+    "symbols": ["BTC", "ETH", "SOL"]
+  },
+  "paper": {
+    "startingEquity": 10000
+  },
+  "risk": {
+    "maxRiskPerTradePct": 0.5,
+    "maxPositionPct": 10,
+    "maxDailyLossPct": 2,
+    "maxOpenPositions": 1,
+    "maxLeverage": 1,
+    "requireStopLoss": true,
+    "requireTakeProfit": true
+  }
+}
