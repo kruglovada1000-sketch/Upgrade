@@ -48,7 +48,6 @@ function appendContextToPrompt(relativePath, exportPrefix = 'const SYSTEM_PROMPT
 appendContextToPrompt('bridge/server.mjs', 'const SYSTEM_PROMPT = `')
 appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
 
-// Brand the browser tab without removing the upstream JARVIS identity.
 {
   const path = join(target, 'index.html')
   let text = readFileSync(path, 'utf8')
@@ -57,18 +56,15 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   writeFileSync(path, text)
 }
 
-// Replace only the cosmetic boot log. The original boot animation and reactor stay intact.
 {
   const path = join(target, 'src/ui/Boot.tsx')
   let text = readFileSync(path, 'utf8')
-  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'VOICE INTERFACE ................ ONLINE',\n]`
+  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT TESTNET CONNECTOR ........ READY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
   const next = text.replace(/const LOG = \[[\s\S]*?\n\]/, replacement)
   if (next === text) throw new Error('Boot LOG block not found')
   writeFileSync(path, next)
 }
 
-// Give the local package a distinct identity while preserving the upstream licence.
-// FreeLLMAPI and Trader are optional: these commands only run when explicitly selected.
 {
   const path = join(target, 'package.json')
   const pkg = JSON.parse(readFileSync(path, 'utf8'))
@@ -80,10 +76,15 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   pkg.scripts['trader:doctor'] = 'node trader/trader-doctor.mjs'
   pkg.scripts['trader:snapshot'] = 'node trader/trader-snapshot.mjs'
   pkg.scripts['trader:paper'] = 'node trader/trader-paper.mjs'
+  pkg.scripts['trader:bybit:doctor'] = 'node trader/bybit-testnet-doctor.mjs'
+  pkg.scripts['trader:bybit:snapshot'] = 'node trader/bybit-testnet-snapshot.mjs'
+  pkg.scripts['trader:bybit:balance'] = 'node trader/bybit-testnet-balance.mjs'
+  pkg.scripts['trader:bybit:preview'] = 'node trader/bybit-testnet-preview.mjs'
+  pkg.scripts['trader:bybit:test'] = 'node trader/bybit-testnet-order.mjs'
+  pkg.scripts['trader:bybit:close'] = 'node trader/bybit-testnet-close.mjs'
   writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n')
 }
 
-// Add our FreeLLMAPI adapter without modifying upstream bridge code.
 {
   const moduleDir = join(here, 'freellmapi')
   copyFileSync(join(moduleDir, 'freellmapi-bridge.mjs'), join(target, 'scripts', 'freellmapi-bridge.mjs'))
@@ -91,23 +92,34 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   copyFileSync(join(moduleDir, 'README.md'), join(target, 'FREELLMAPI-KODA.md'))
 }
 
-// Add JARVIS Trader v0.1. This build contains public market-data access and paper simulation only.
 {
   const moduleDir = join(here, 'trader')
   const targetDir = join(target, 'trader')
   mkdirSync(targetDir, { recursive: true })
-  for (const file of ['README.md', 'trader.config.json', 'trader-lib.mjs', 'trader-doctor.mjs', 'trader-snapshot.mjs', 'trader-paper.mjs']) {
+  for (const file of [
+    'README.md',
+    'trader.config.json',
+    'trader-lib.mjs',
+    'trader-doctor.mjs',
+    'trader-snapshot.mjs',
+    'trader-paper.mjs',
+    'bybit-testnet-lib.mjs',
+    'bybit-testnet-doctor.mjs',
+    'bybit-testnet-snapshot.mjs',
+    'bybit-testnet-balance.mjs',
+    'bybit-testnet-preview.mjs',
+    'bybit-testnet-order.mjs',
+    'bybit-testnet-close.mjs',
+  ]) {
     copyFileSync(join(moduleDir, file), join(targetDir, file))
   }
 }
 
-// Ship the context and install guide inside every generated package.
 copyFileSync(join(here, 'PROJECT-CONTEXT.md'), join(target, 'KODA-PROJECT-CONTEXT.md'))
 if (existsSync(join(here, 'INSTALL-RU.md'))) {
   copyFileSync(join(here, 'INSTALL-RU.md'), join(target, 'INSTALL-RU.md'))
 }
 
-// Preserve attribution and make the relationship to upstream explicit.
 const notice = `# JARVIS // KODA\n\nThis build is derived from adewaskar/jarvis under the MIT License.\nUpstream project: https://github.com/adewaskar/jarvis\n\nCustom layer: kruglovada1000-sketch/Upgrade/jarvis-upgrade\nPrimary projects: ohrana.tech and Upgrade.\n`
 writeFileSync(join(target, 'KODA-NOTICE.md'), notice)
 
