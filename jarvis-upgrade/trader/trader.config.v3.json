@@ -1,0 +1,61 @@
+{
+  "mode": "paper",
+  "marketData": {
+    "provider": "hyperliquid",
+    "endpoint": "https://api.hyperliquid.xyz/info",
+    "symbols": ["BTC", "ETH", "SOL"]
+  },
+  "bybitDemo": {
+    "baseUrl": "https://api-demo.bybit.com",
+    "category": "linear",
+    "quote": "USDT",
+    "accountType": "UNIFIED",
+    "recvWindow": 5000,
+    "symbols": ["BTC", "ETH", "SOL"]
+  },
+  "paper": {
+    "startingEquity": 10000
+  },
+  "risk": {
+    "maxRiskPerTradePct": 0.5,
+    "maxPositionPct": 0.1,
+    "maxDailyLossPct": 2,
+    "maxOpenPositions": 1,
+    "maxLeverage": 1,
+    "requireStopLoss": true,
+    "requireTakeProfit": true
+  },
+  "strategy": {
+    "name": "JARVIS_ORIGINAL_MTF_V3",
+    "adxMin": 18,
+    "longSlopeMinPct": 0.03,
+    "shortSlopeMaxPct": -0.03,
+    "minAtrPct": 0.2,
+    "maxAtrPct": 4.0,
+    "longRsiMin": 50,
+    "longRsiMax": 66,
+    "shortRsiMin": 34,
+    "shortRsiMax": 50,
+    "breakoutVolumeRatio": 1.25,
+    "maxExtensionAtr": 1.15,
+    "maxTriggerBodyAtr": 1.1,
+    "maxBreakoutRangeAtr": 1.8,
+    "swingLookback": 8,
+    "swingBufferAtr": 0.2,
+    "stopAtrFloorMult": 2.0,
+    "minStopPct": 1.0,
+    "maxStopPct": 2.8,
+    "pullbackRewardRisk": 2.3,
+    "breakoutRewardRisk": 2.0,
+    "noAveragingDown": true
+  },
+  "strategyLab": {
+    "days": 30,
+    "warmupDays": 40,
+    "feeBpsPerSide": 6,
+    "slippageBpsPerSide": 2,
+    "researchRiskPct": 0.25,
+    "startingEquity": 10000,
+    "monteCarloRuns": 500
+  }
+}
