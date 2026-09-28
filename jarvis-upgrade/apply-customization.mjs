@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, copyFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, copyFileSync, mkdirSync } from 'node:fs'
 import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -61,14 +61,14 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
 {
   const path = join(target, 'src/ui/Boot.tsx')
   let text = readFileSync(path, 'utf8')
-  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
+  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'VOICE INTERFACE ................ ONLINE',\n]`
   const next = text.replace(/const LOG = \[[\s\S]*?\n\]/, replacement)
   if (next === text) throw new Error('Boot LOG block not found')
   writeFileSync(path, next)
 }
 
 // Give the local package a distinct identity while preserving the upstream licence.
-// FreeLLMAPI is optional: these commands only run when explicitly selected.
+// FreeLLMAPI and Trader are optional: these commands only run when explicitly selected.
 {
   const path = join(target, 'package.json')
   const pkg = JSON.parse(readFileSync(path, 'utf8'))
@@ -77,6 +77,9 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   pkg.scripts ??= {}
   pkg.scripts['bridge:freellmapi'] = 'node scripts/freellmapi-bridge.mjs'
   pkg.scripts['freellmapi:doctor'] = 'node scripts/freellmapi-doctor.mjs'
+  pkg.scripts['trader:doctor'] = 'node trader/trader-doctor.mjs'
+  pkg.scripts['trader:snapshot'] = 'node trader/trader-snapshot.mjs'
+  pkg.scripts['trader:paper'] = 'node trader/trader-paper.mjs'
   writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n')
 }
 
@@ -86,6 +89,16 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   copyFileSync(join(moduleDir, 'freellmapi-bridge.mjs'), join(target, 'scripts', 'freellmapi-bridge.mjs'))
   copyFileSync(join(moduleDir, 'freellmapi-doctor.mjs'), join(target, 'scripts', 'freellmapi-doctor.mjs'))
   copyFileSync(join(moduleDir, 'README.md'), join(target, 'FREELLMAPI-KODA.md'))
+}
+
+// Add JARVIS Trader v0.1. This build contains public market-data access and paper simulation only.
+{
+  const moduleDir = join(here, 'trader')
+  const targetDir = join(target, 'trader')
+  mkdirSync(targetDir, { recursive: true })
+  for (const file of ['README.md', 'trader.config.json', 'trader-lib.mjs', 'trader-doctor.mjs', 'trader-snapshot.mjs', 'trader-paper.mjs']) {
+    copyFileSync(join(moduleDir, file), join(targetDir, file))
+  }
 }
 
 // Ship the context and install guide inside every generated package.
