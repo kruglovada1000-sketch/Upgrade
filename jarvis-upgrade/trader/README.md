@@ -2,20 +2,20 @@
 
 Торговый модуль для JARVIS // KODA.
 
-## Статус v0.2
+## Статус v0.3
 
 По умолчанию JARVIS Trader остаётся в безопасном `paper`-режиме.
 
-Дополнительно добавлен **Bybit Testnet**:
+Для Bybit используется **Demo Trading основного аккаунта**, а не Testnet:
 
-- публичные котировки Bybit Testnet;
-- проверка API-ключа и его разрешений;
-- чтение тестового баланса;
+- REST endpoint: `https://api-demo.bybit.com`;
+- котировки и торговые условия соответствуют Demo Trading Bybit;
+- отдельный API key/secret создаётся после переключения основного аккаунта в Demo Trading;
+- чтение demo-баланса;
 - расчёт сделки через общий Risk Guard;
-- тестовый market-order с обязательными TP/SL;
-- аварийное закрытие тестовой позиции;
-- журнал отправленных testnet-команд;
-- mainnet endpoint в конфигурации отсутствует.
+- demo market-order с обязательными TP/SL;
+- аварийное закрытие demo-позиции;
+- реальный mainnet endpoint `https://api.bybit.com` в конфигурации отсутствует.
 
 ## Базовые команды
 
@@ -25,58 +25,51 @@ npm run trader:snapshot
 npm run trader:paper -- --symbol BTC --side long --stopPct 1 --takePct 2
 ```
 
-## Bybit Testnet
+## Bybit Demo Trading
 
-Публичная проверка, ключи не нужны:
-
-```bash
-npm run trader:bybit:doctor
-npm run trader:bybit:snapshot
-```
-
-Для приватных команд нужны **только Testnet API key/secret**, созданные на Bybit Testnet.
-Никогда не добавляйте ключи в GitHub и не записывайте их в этот репозиторий.
+Переключитесь в обычном аккаунте Bybit в режим **Demo Trading**, затем именно там создайте API key/secret.
+Ключ от обычного реального аккаунта и ключ от Testnet для Demo Trading не подходят.
 
 Переменные окружения:
 
 ```text
-BYBIT_TESTNET_API_KEY
-BYBIT_TESTNET_API_SECRET
+BYBIT_DEMO_API_KEY
+BYBIT_DEMO_API_SECRET
 ```
 
-Для ключа рекомендуется оставить только разрешения ContractTrade: `Order` и `Position`.
-JARVIS Trader намеренно отклоняет ключ, если у него есть любые Wallet permissions.
+Для ключа оставьте торговые разрешения ContractTrade: `Order` и `Position`.
+JARVIS Trader отклоняет ключ, если у него есть Wallet permissions.
 
-После установки переменных:
+Проверка:
 
 ```bash
 npm run trader:bybit:doctor
 npm run trader:bybit:balance
+npm run trader:bybit:snapshot
 npm run trader:bybit:preview -- --symbol BTC --side long --stopPct 1 --takePct 2
 ```
 
-`preview` рассчитывает сделку, но ничего не отправляет.
+`preview` ничего не отправляет на биржу.
 
-### Отправка тестового ордера
+### Отправка Demo-ордера
 
-Bybit Testnet order имеет двойной предохранитель.
-
-Нужно одновременно:
+Даже для виртуальных денег используется двойной предохранитель.
+Нужно одновременно установить:
 
 ```text
-JARVIS_TRADER_TESTNET_EXECUTION=YES
+JARVIS_TRADER_DEMO_EXECUTION=YES
 ```
 
-и флаг:
+и передать:
 
 ```text
---confirm TESTNET
+--confirm DEMO
 ```
 
 Пример:
 
 ```bash
-npm run trader:bybit:test -- --symbol BTC --side long --stopPct 1 --takePct 2 --confirm TESTNET
+npm run trader:bybit:demo -- --symbol BTC --side long --stopPct 1 --takePct 2 --confirm DEMO
 ```
 
 В сделке используются:
@@ -86,15 +79,15 @@ npm run trader:bybit:test -- --symbol BTC --side long --stopPct 1 --takePct 2 --
 - leverage 1x;
 - обязательные Stop Loss и Take Profit;
 - размер позиции, ограниченный Risk Guard;
-- позиционный режим `one-way` (`positionIdx=0`).
+- one-way position mode (`positionIdx=0`).
 
-### Аварийное закрытие
+### Аварийное закрытие Demo-позиции
 
 ```bash
-npm run trader:bybit:close -- --symbol BTC --confirm TESTNET
+npm run trader:bybit:close -- --symbol BTC --confirm DEMO
 ```
 
-Команда тоже требует `JARVIS_TRADER_TESTNET_EXECUTION=YES` и закрывает только тестовую позицию reduce-only ордером.
+Команда требует `JARVIS_TRADER_DEMO_EXECUTION=YES`.
 
 ## Ограничения риска
 
@@ -108,14 +101,13 @@ npm run trader:bybit:close -- --symbol BTC --confirm TESTNET
 - leverage: 1x;
 - SL и TP обязательны.
 
-Параметры находятся в `trader.config.json`.
-
 ## Что пока НЕ сделано
 
-- нет Bybit mainnet execution;
-- нет автоматического перехода с testnet на live;
-- нет автоторговой стратегии/сигнального цикла;
-- нет хранения приватных ключей в GitHub;
-- нет разрешений на вывод средств.
+- нет торговли реальными деньгами Bybit;
+- нет endpoint реального mainnet в конфигурации;
+- нет автоматического перехода Demo -> Live;
+- нет хранения API-ключей в GitHub;
+- нет разрешений на вывод средств;
+- автоторговый сигнальный цикл будет добавляться после проверки Demo Trading.
 
-Следующий этап после успешной проверки Bybit Testnet: market data -> стратегия JARVIS -> Risk Guard -> testnet order -> контроль позиции -> журнал -> статистика P&L/просадки/win rate/profit factor.
+Следующий этап: market data -> стратегия JARVIS -> Risk Guard -> Demo order -> контроль позиции -> журнал -> статистика P&L/просадки/win rate/profit factor.
