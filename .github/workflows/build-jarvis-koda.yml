@@ -41,7 +41,6 @@ jobs:
           npm run trader:snapshot
           npm run trader:paper -- --symbol BTC --side long --stopPct 1 --takePct 2
           npm run trader:bybit:doctor
-          npm run trader:bybit:snapshot
 
       - name: Validate build
         working-directory: jarvis-koda
