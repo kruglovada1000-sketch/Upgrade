@@ -56,7 +56,7 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
 {
   const path = join(target, 'src/ui/Boot.tsx')
   let text = readFileSync(path, 'utf8')
-  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT DEMO CONNECTOR ........... READY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
+  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT DEMO CONNECTOR ........... READY',\n  'JARVIS MTF STRATEGY ............ SIGNAL ONLY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
   const next = text.replace(/const LOG = \[[\s\S]*?\n\]/, replacement)
   if (next === text) throw new Error('Boot LOG block not found')
   writeFileSync(path, next)
@@ -73,6 +73,7 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   pkg.scripts['trader:doctor'] = 'node trader/trader-doctor.mjs'
   pkg.scripts['trader:snapshot'] = 'node trader/trader-snapshot.mjs'
   pkg.scripts['trader:paper'] = 'node trader/trader-paper.mjs'
+  pkg.scripts['trader:strategy'] = 'node trader/jarvis-strategy-signal.mjs'
   pkg.scripts['trader:bybit:doctor'] = 'node trader/bybit-demo-doctor.mjs'
   pkg.scripts['trader:bybit:snapshot'] = 'node trader/bybit-demo-snapshot.mjs'
   pkg.scripts['trader:bybit:balance'] = 'node trader/bybit-demo-balance.mjs'
@@ -100,6 +101,8 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
     'trader-doctor.mjs',
     'trader-snapshot.mjs',
     'trader-paper.mjs',
+    'jarvis-strategy.mjs',
+    'jarvis-strategy-signal.mjs',
     'bybit-demo-lib.mjs',
     'bybit-demo-doctor.mjs',
     'bybit-demo-snapshot.mjs',
@@ -110,6 +113,14 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   ]) {
     copyFileSync(join(moduleDir, file), join(targetDir, file))
   }
+
+  const bybitLibPath = join(targetDir, 'bybit-demo-lib.mjs')
+  let bybitLib = readFileSync(bybitLibPath, 'utf8')
+  bybitLib = bybitLib.replace(
+    'const timestamp = String(timeData.time)',
+    'const timestamp = String(Number(timeData.time) - 1500)',
+  )
+  writeFileSync(bybitLibPath, bybitLib)
 }
 
 copyFileSync(join(here, 'PROJECT-CONTEXT.md'), join(target, 'KODA-PROJECT-CONTEXT.md'))
@@ -117,7 +128,7 @@ if (existsSync(join(here, 'INSTALL-RU.md'))) {
   copyFileSync(join(here, 'INSTALL-RU.md'), join(target, 'INSTALL-RU.md'))
 }
 
-const notice = `# JARVIS // KODA\n\nThis build is derived from adewaskar/jarvis under the MIT License.\nUpstream project: https://github.com/adewaskar/jarvis\n\nCustom layer: kruglovada1000-sketch/Upgrade/jarvis-upgrade\nPrimary projects: ohrana.tech and Upgrade.\n`
+const notice = `# JARVIS // KODA\n\nThis build is derived from adewaskar/jarvis under the MIT License.\nUpstream project: https://github.com/adewaskar/jarvis\n\nCustom layer: kruglovada1000-sketch/Upgrade/jarvis-upgrade\nPrimary projects: ohrana.tech and Upgrade.\n\nTrading strategy code in trader/jarvis-strategy.mjs is an original implementation written for JARVIS // KODA. It does not copy third-party strategy source code or parameter tables.\n`
 writeFileSync(join(target, 'KODA-NOTICE.md'), notice)
 
 console.log('JARVIS // KODA customization applied successfully.')
