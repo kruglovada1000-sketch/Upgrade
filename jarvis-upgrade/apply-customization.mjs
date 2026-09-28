@@ -56,7 +56,7 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
 {
   const path = join(target, 'src/ui/Boot.tsx')
   let text = readFileSync(path, 'utf8')
-  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT DEMO CONNECTOR ........... READY',\n  'JARVIS MTF STRATEGY ............ SIGNAL ONLY',\n  'STRATEGY LAB / BACKTEST ........ READY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
+  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT DEMO CONNECTOR ........... READY',\n  'JARVIS MTF STRATEGY ............ SIGNAL ONLY',\n  'STRATEGY LAB / BACKTEST ........ READY',\n  'TRAIN / OOS OPTIMIZER .......... READY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
   const next = text.replace(/const LOG = \[[\s\S]*?\n\]/, replacement)
   if (next === text) throw new Error('Boot LOG block not found')
   writeFileSync(path, next)
@@ -75,6 +75,7 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   pkg.scripts['trader:paper'] = 'node trader/trader-paper.mjs'
   pkg.scripts['trader:strategy'] = 'node trader/jarvis-strategy-signal.mjs'
   pkg.scripts['trader:backtest'] = 'node trader/jarvis-backtest.mjs'
+  pkg.scripts['trader:optimize'] = 'node trader/jarvis-optimize.mjs'
   pkg.scripts['trader:bybit:doctor'] = 'node trader/bybit-demo-doctor.mjs'
   pkg.scripts['trader:bybit:snapshot'] = 'node trader/bybit-demo-snapshot.mjs'
   pkg.scripts['trader:bybit:balance'] = 'node trader/bybit-demo-balance.mjs'
@@ -105,6 +106,7 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
     'jarvis-strategy.mjs',
     'jarvis-strategy-signal.mjs',
     'jarvis-backtest.mjs',
+    'jarvis-optimize.mjs',
     'bybit-demo-lib.mjs',
     'bybit-demo-doctor.mjs',
     'bybit-demo-snapshot.mjs',
