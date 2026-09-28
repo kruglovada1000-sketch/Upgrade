@@ -5,6 +5,14 @@
     "endpoint": "https://api.hyperliquid.xyz/info",
     "symbols": ["BTC", "ETH", "SOL"]
   },
+  "bybitTestnet": {
+    "baseUrl": "https://api-testnet.bybit.com",
+    "category": "linear",
+    "quote": "USDT",
+    "accountType": "UNIFIED",
+    "recvWindow": 5000,
+    "symbols": ["BTC", "ETH", "SOL"]
+  },
   "paper": {
     "startingEquity": 10000
   },
