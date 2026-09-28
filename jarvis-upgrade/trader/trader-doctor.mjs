@@ -8,13 +8,13 @@ function add(name, ok, detail) {
 }
 
 add('default_mode_is_paper', config.mode === 'paper', `mode=${config.mode}`)
-add('bybit_is_testnet_only', config.bybitTestnet?.baseUrl === 'https://api-testnet.bybit.com', config.bybitTestnet?.baseUrl || 'missing')
-add('bybit_mainnet_not_configured', !JSON.stringify(config).includes('https://api.bybit.com'), 'no Bybit mainnet REST endpoint in config')
+add('bybit_is_demo_only', config.bybitDemo?.baseUrl === 'https://api-demo.bybit.com', config.bybitDemo?.baseUrl || 'missing')
+add('real_bybit_mainnet_not_configured', !JSON.stringify(config).includes('https://api.bybit.com'), 'no real-money Bybit REST endpoint in config')
 add('leverage_is_1x', config.risk.maxLeverage === 1, `maxLeverage=${config.risk.maxLeverage}`)
 add('stop_required', config.risk.requireStopLoss === true, `requireStopLoss=${config.risk.requireStopLoss}`)
 add('take_required', config.risk.requireTakeProfit === true, `requireTakeProfit=${config.risk.requireTakeProfit}`)
 add('risk_per_trade_conservative', config.risk.maxRiskPerTradePct <= 0.5, `maxRiskPerTradePct=${config.risk.maxRiskPerTradePct}`)
-add('testnet_execution_double_gated', true, 'requires local env JARVIS_TRADER_TESTNET_EXECUTION=YES and --confirm TESTNET')
+add('demo_execution_double_gated', true, 'requires local env JARVIS_TRADER_DEMO_EXECUTION=YES and --confirm DEMO')
 
 try {
   const mids = await fetchAllMids(config)
@@ -24,10 +24,10 @@ try {
   add('hyperliquid_market_data', false, error.message)
 }
 
-if (process.env.BYBIT_TESTNET_API_KEY || process.env.BYBIT_TESTNET_API_SECRET) {
-  add('bybit_credentials_not_required_for_paper', true, 'Bybit credentials detected locally; generic doctor does not print or use them')
+if (process.env.BYBIT_DEMO_API_KEY || process.env.BYBIT_DEMO_API_SECRET) {
+  add('bybit_demo_credentials_not_required_for_paper', true, 'Bybit Demo credentials detected locally; generic doctor does not print or use them')
 } else {
-  add('bybit_credentials_not_required_for_paper', true, 'no Bybit credentials present')
+  add('bybit_demo_credentials_not_required_for_paper', true, 'no Bybit Demo credentials present')
 }
 
 console.table(checks)
@@ -36,4 +36,4 @@ if (failed.length) {
   console.error(`JARVIS Trader doctor: ${failed.length} check(s) failed.`)
   process.exit(1)
 }
-console.log('JARVIS Trader doctor: READY — paper by default; optional Bybit TESTNET connector is separately gated.')
+console.log('JARVIS Trader doctor: READY — paper by default; optional Bybit DEMO connector is separately gated.')
