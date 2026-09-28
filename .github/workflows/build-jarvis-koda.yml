@@ -41,6 +41,8 @@ jobs:
           npm run trader:snapshot
           npm run trader:paper -- --symbol BTC --side long --stopPct 1 --takePct 2
           npm run trader:bybit:doctor
+          node --check trader/jarvis-strategy.mjs
+          node --check trader/jarvis-backtest.mjs
 
       - name: Validate build
         working-directory: jarvis-koda
