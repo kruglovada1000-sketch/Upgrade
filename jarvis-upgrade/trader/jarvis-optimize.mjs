@@ -56,6 +56,7 @@ async function fetchHistoricalKlines(symbol, interval, fromTs, toTs, config) {
     end = oldest - 1
   }
 
+  if (pages >= maxPages) throw new Error(`History pagination exceeded ${maxPages} pages for ${interval}`)
   return [...byTs.values()]
     .filter((c) => c.ts + intervalToMs(interval) <= toTs)
     .sort((a, b) => a.ts - b.ts)
@@ -174,7 +175,7 @@ function configWith(base, params) {
     strategy: {
       ...base.strategy,
       ...params,
-      name: 'JARVIS_OPTIMIZER_CANDIDATE',
+      name: 'JARVIS_OPTIMIZER_CANDIDATE_V4',
     },
   }
 }
@@ -186,30 +187,38 @@ function candidateObjective(m, minTrades) {
   return m.expectancyR * 2.5 + Math.log(pf) * 0.8 - m.maxDrawdownPct * 0.03 + sampleBonus
 }
 
+function gateProfitFactor(m) {
+  if (!m || m.trades <= 0) return 0
+  if (m.profitFactor == null) return m.wins === m.trades ? Number.POSITIVE_INFINITY : 0
+  return m.profitFactor
+}
+
 function makeCandidate(rand) {
   return {
-    adxMin: pick(rand, [12, 15, 18, 21]),
-    longSlopeMinPct: pick(rand, [0, 0.015, 0.03, 0.05]),
-    shortSlopeMaxPct: pick(rand, [0, -0.015, -0.03, -0.05]),
-    longRsiMin: pick(rand, [46, 48, 50]),
-    longRsiMax: pick(rand, [64, 66, 68, 70]),
-    shortRsiMin: pick(rand, [30, 32, 34, 36]),
-    shortRsiMax: pick(rand, [48, 50, 52, 54]),
-    breakoutVolumeRatio: pick(rand, [1.00, 1.10, 1.20, 1.30]),
-    maxExtensionAtr: pick(rand, [1.0, 1.25, 1.5, 1.75]),
-    maxTriggerBodyAtr: pick(rand, [0.9, 1.1, 1.3, 1.5]),
-    swingLookback: pick(rand, [5, 8, 12]),
-    swingBufferAtr: pick(rand, [0.10, 0.20, 0.30]),
-    stopAtrFloorMult: pick(rand, [1.4, 1.7, 2.0, 2.3]),
+    minAtrPct: pick(rand, [0.12, 0.18, 0.24]),
+    adxBiasMin: pick(rand, [10, 12, 14, 16, 18]),
+    biasSlopePct: pick(rand, [0, 0.01, 0.015, 0.025, 0.04]),
+    longRsiMin: pick(rand, [40, 44, 48]),
+    longRsiMax: pick(rand, [68, 72, 76]),
+    shortRsiMin: pick(rand, [24, 28, 32]),
+    shortRsiMax: pick(rand, [52, 56, 60]),
+    pullbackTouchAtr: pick(rand, [0.45, 0.65, 0.85, 1.05]),
+    maxPullbackBodyAtr: pick(rand, [1.0, 1.35, 1.7]),
+    breakoutVolumeRatio: pick(rand, [1.0, 1.1, 1.2, 1.3]),
+    maxBreakoutExtensionAtr: pick(rand, [1.3, 1.7, 2.1]),
+    maxBreakoutRangeAtr: pick(rand, [1.8, 2.2, 2.6]),
+    swingLookback: pick(rand, [6, 10, 14]),
+    swingBufferAtr: pick(rand, [0.10, 0.15, 0.25]),
+    stopAtrFloorMult: pick(rand, [1.2, 1.5, 1.8]),
     minStopPct: pick(rand, [0.7, 0.9, 1.1]),
-    maxStopPct: pick(rand, [2.0, 2.5, 3.0]),
-    pullbackRewardRisk: pick(rand, [1.6, 1.9, 2.2, 2.5]),
-    breakoutRewardRisk: pick(rand, [1.5, 1.8, 2.1, 2.4]),
+    maxStopPct: pick(rand, [2.5, 3.2, 4.0]),
+    pullbackRewardRisk: pick(rand, [1.4, 1.7, 2.0, 2.3]),
+    breakoutRewardRisk: pick(rand, [1.6, 2.0, 2.4, 2.8]),
   }
 }
 
 function gateDiagnostics({ symbol, c4h, c1h, c15m, config, fromTs, toTs }) {
-  const counts = { decisions: 0, volatility: 0, regime: 0, confirmation: 0, trigger: 0, eligible: 0 }
+  const counts = { decisions: 0, volatility: 0, bias: 0, trend: 0, momentum: 0, setup: 0, eligible: 0 }
   for (let i = 219; i < c15m.length - 1; i += 1) {
     const decisionCandle = c15m[i]
     if (decisionCandle.ts < fromTs || decisionCandle.ts >= toTs) continue
@@ -219,11 +228,13 @@ function gateDiagnostics({ symbol, c4h, c1h, c15m, config, fromTs, toTs }) {
     const s15m = c15m.slice(Math.max(0, i - 259), i + 1)
     if (s4h.length < 220 || s1h.length < 220 || s15m.length < 220) continue
     const signal = evaluateJarvisStrategySnapshot({ symbol, c4h: s4h, c1h: s1h, c15m: s15m, config })
+    const gates = signal.gates || {}
     counts.decisions += 1
-    if (signal.gates?.volatilityOk) counts.volatility += 1
-    if (signal.gates?.long?.regime || signal.gates?.short?.regime) counts.regime += 1
-    if (signal.gates?.long?.confirmation || signal.gates?.short?.confirmation) counts.confirmation += 1
-    if ((signal.gates?.long?.trigger && signal.gates.long.trigger !== 'NONE') || (signal.gates?.short?.trigger && signal.gates.short.trigger !== 'NONE')) counts.trigger += 1
+    if (gates.volatilityOk) counts.volatility += 1
+    if (gates.long?.bias || gates.short?.bias) counts.bias += 1
+    if (gates.long?.trend || gates.short?.trend) counts.trend += 1
+    if (gates.long?.momentum || gates.short?.momentum) counts.momentum += 1
+    if ((gates.long?.setup && gates.long.setup !== 'NONE') || (gates.short?.setup && gates.short.setup !== 'NONE')) counts.setup += 1
     if (signal.action !== 'WAIT') counts.eligible += 1
   }
   return counts
@@ -266,7 +277,8 @@ async function main() {
   const splitTs = startTs + (endTs - startTs) * 0.70
   const historyStart = startTs - warmupDays * DAY
 
-  console.log(`JARVIS Optimizer — ${symbol}, ${days} days, ${samples} train-only candidates`)
+  console.log(`JARVIS Optimizer V2 — ${symbol}, ${days} days, ${samples} train-only candidates`)
+  console.log(`Active strategy family: ${base.strategy?.name || 'unknown'}`)
   console.log('Selection uses first 70% only. The final 30% stays frozen until one candidate is selected.')
   console.log('Downloading history once...')
 
@@ -278,14 +290,7 @@ async function main() {
 
   const baselineGates = gateDiagnostics({ symbol, c4h, c1h, c15m, config: base, fromTs: startTs, toTs: splitTs })
   console.log('\nBaseline gate diagnostics on TRAIN 70%:')
-  console.table([{
-    decisions: baselineGates.decisions,
-    volatility: baselineGates.volatility,
-    regime: baselineGates.regime,
-    confirmation: baselineGates.confirmation,
-    trigger: baselineGates.trigger,
-    eligible: baselineGates.eligible,
-  }])
+  console.table([baselineGates])
 
   const rand = seededRandom()
   const candidates = [{ ...base.strategy }]
@@ -310,7 +315,7 @@ async function main() {
   const ranked = trainResults.filter((r) => Number.isFinite(r.objective)).sort((a, b) => b.objective - a.objective)
   if (!ranked.length) {
     console.log(`NO ELIGIBLE CANDIDATE: none produced at least ${minTrainTrades} TRAIN trades.`)
-    console.log('Conclusion: the current trigger family is too restrictive; widen the architecture before tuning parameters.')
+    console.log('Conclusion: the current setup family is still too restrictive; widen the architecture before tuning more parameters.')
     process.exit(2)
   }
 
@@ -332,7 +337,9 @@ async function main() {
   const oos = backtestPeriod({ symbol, c4h, c1h, c15m, config: frozenConfig, fromTs: splitTs, toTs: endTs, feeBpsPerSide, slippageBpsPerSide }).metrics
 
   const oosMinTrades = Math.max(3, Math.ceil(minTrainTrades * 0.3))
-  const passed = winner.expectancyR > 0.05 && (winner.profitFactor ?? 0) > 1.10 && oos.trades >= oosMinTrades && oos.expectancyR > 0 && (oos.profitFactor ?? 0) > 1.0
+  const trainPf = gateProfitFactor(winner)
+  const oosPf = gateProfitFactor(oos)
+  const passed = winner.expectancyR > 0.05 && trainPf > 1.10 && oos.trades >= oosMinTrades && oos.expectancyR > 0 && oosPf > 1.0
 
   console.log('\nFrozen winner — TRAIN vs untouched OOS:')
   console.table([
@@ -343,7 +350,8 @@ async function main() {
   console.log('PASS is not permission for live trading. It only means the candidate survived this train/OOS test.')
 
   const report = {
-    engine: 'JARVIS_TRAIN_OOS_OPTIMIZER_V1',
+    engine: 'JARVIS_TRAIN_OOS_OPTIMIZER_V2',
+    strategyFamily: base.strategy?.name || null,
     symbol,
     period: { days, from: new Date(startTs).toISOString(), split: new Date(splitTs).toISOString(), to: new Date(endTs).toISOString() },
     assumptions: { selection: 'first 70% only', oos: 'final 30% untouched until winner selected', feeBpsPerSide, slippageBpsPerSide, minTrainTrades, samples },
@@ -352,6 +360,10 @@ async function main() {
     selectedParams: winner.params,
     selectedTrain: winner,
     frozenOos: oos,
+    gateProfitFactors: {
+      train: Number.isFinite(trainPf) ? trainPf : 'Infinity',
+      oos: Number.isFinite(oosPf) ? oosPf : 'Infinity',
+    },
     researchGate: passed ? 'PASS' : 'REJECT',
     generatedAt: new Date().toISOString(),
   }
