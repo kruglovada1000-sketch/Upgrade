@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, copyFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, copyFileSync, mkdirSync, cpSync } from 'node:fs'
 import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -56,7 +56,7 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
 {
   const path = join(target, 'src/ui/Boot.tsx')
   let text = readFileSync(path, 'utf8')
-  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT DEMO CONNECTOR ........... READY',\n  'JARVIS MTF STRATEGY ............ SIGNAL ONLY',\n  'STRATEGY LAB / BACKTEST ........ READY',\n  'TRAIN / OOS OPTIMIZER .......... READY',\n  'VOICE INTERFACE ................ ONLINE',\n]`
+  const replacement = `const LOG = [\n  'RUSCORP PROJECT PROFILE ........ OK',\n  'OHRANA.TECH CONTEXT ............ LOADED',\n  'UPGRADE TOOLCHAIN .............. READY',\n  'GITHUB SAFETY GATE ............. ARMED',\n  'SEO / LINKS / LIGHTHOUSE ....... READY',\n  'TRADER PAPER MODE .............. SAFE',\n  'BYBIT DEMO CONNECTOR ........... READY',\n  'JARVIS MTF STRATEGY ............ SIGNAL ONLY',\n  'STRATEGY LAB / BACKTEST ........ READY',\n  'TRAIN / OOS OPTIMIZER .......... READY',\n  'FREQTRADE RESEARCH ENGINE ...... BUNDLED',\n  'VOICE INTERFACE ................ ONLINE',\n]`
   const next = text.replace(/const LOG = \[[\s\S]*?\n\]/, replacement)
   if (next === text) throw new Error('Boot LOG block not found')
   writeFileSync(path, next)
@@ -127,12 +127,18 @@ appendContextToPrompt('src/config.ts', 'export const SYSTEM_PROMPT = `')
   writeFileSync(bybitLibPath, bybitLib)
 }
 
+{
+  const moduleDir = join(here, 'freqtrade')
+  const targetDir = join(target, 'freqtrade')
+  cpSync(moduleDir, targetDir, { recursive: true })
+}
+
 copyFileSync(join(here, 'PROJECT-CONTEXT.md'), join(target, 'KODA-PROJECT-CONTEXT.md'))
 if (existsSync(join(here, 'INSTALL-RU.md'))) {
   copyFileSync(join(here, 'INSTALL-RU.md'), join(target, 'INSTALL-RU.md'))
 }
 
-const notice = `# JARVIS // KODA\n\nThis build is derived from adewaskar/jarvis under the MIT License.\nUpstream project: https://github.com/adewaskar/jarvis\n\nCustom layer: kruglovada1000-sketch/Upgrade/jarvis-upgrade\nPrimary projects: ohrana.tech and Upgrade.\n\nTrading strategy code in trader/jarvis-strategy.mjs is an original implementation written for JARVIS // KODA. It does not copy third-party strategy source code or parameter tables.\n`
+const notice = `# JARVIS // KODA\n\nThis build is derived from adewaskar/jarvis under the MIT License.\nUpstream project: https://github.com/adewaskar/jarvis\n\nCustom layer: kruglovada1000-sketch/Upgrade/jarvis-upgrade\nPrimary projects: ohrana.tech and Upgrade.\n\nTrading strategy code in trader/jarvis-strategy.mjs is an original implementation written for JARVIS // KODA. It does not copy third-party strategy source code or parameter tables.\n\nThe optional freqtrade/ module uses the official Freqtrade Docker image at runtime and downloads candidate strategies from freqtrade/freqtrade-strategies. Their respective upstream licenses and notices apply.\n`
 writeFileSync(join(target, 'KODA-NOTICE.md'), notice)
 
 console.log('JARVIS // KODA customization applied successfully.')
